@@ -1,0 +1,45 @@
+﻿<Project>
+  <ItemGroup>
+    <File Include="Generated/AR0430_Camera.vhd" />
+    <File Include="Generated/Blob_Detect.vhd" />
+    <File Include="Generated/Camera_Capture_SDRAM.vhd" />
+    <File Include="Generated/Color_Correction_Filter.vhd" />
+    <File Include="Generated/Color_Threshold_HSV_Filter.vhd" />
+    <File Include="Generated/Draw_Squares.vhd" />
+    <File Include="Generated/Gaussian_Filter.vhd" />
+    <File Include="Generated/HDMI_Out.vhd" />
+    <File Include="Generated/I2C_Master_Interface.vhd" />
+    <File Include="Generated/Image_Data_Package.vhd" />
+    <File Include="Generated/Input_Debouncer.vhd" />
+    <File Include="Generated/OnSemi_Cam_Config.vhd" />
+    <File Include="Generated/OnSemi_HDMI.vhd" />
+    <File Include="Generated/RGB2HSV_Filter.vhd" />
+    <File Include="Generated/VS_SDRAM_Interface.vhd" />
+    <File Include="Libraries/CSI_Camera/ALTDDIO_IN.qsys.vhdp" />
+    <File Include="Libraries/CSI_Camera/ALTSYNCRAM.qsys.vhdp" />
+    <File Include="Libraries/CSI_Camera/AR0430_Camera.vhdp" />
+    <File Include="Libraries/CSI_Camera/AR0430_Camera_Config.vhdp" />
+    <File Include="Libraries/HDMI/DVI_OUT.v" />
+    <File Include="Libraries/HDMI/HDMI_Out.vhdp" />
+    <File Include="Libraries/HDMI/TMDS_ENCODE.v" />
+    <File Include="Libraries/SDRAM_HDMI/Camera_Capture_SDRAM.vhdp" />
+    <File Include="Libraries/SDRAM_HDMI/SDRAM_Controller.qsys" />
+    <File Include="Libraries/SDRAM_HDMI/VS_SDRAM_Interface.vhdp" />
+    <File Include="Libraries/SDRAM_HDMI/VS_SDRAM_PLL.qip" />
+    <File Include="Libraries/SDRAM_HDMI/VS_SDRAM_PLL.vhd" />
+    <File Include="Libraries/Blob_Detect.vhdp" />
+    <File Include="Libraries/Color_Correction.vhdp" />
+    <File Include="Libraries/Color_Threshold_HSV.vhdp" />
+    <File Include="Libraries/Gaussian_Filter.vhdp" />
+    <File Include="Libraries/I2C.vhdp" />
+    <File Include="Libraries/Input_Debouncer.vhdp" />
+    <File Include="Libraries/OnSemi_Image_Data.vhdp" />
+    <File Include="Libraries/RGB2HSV.vhdp" />
+    <File Include="Libraries/Squares.vhdp" />
+    <File Include="OnSemi_HDMI.vhdp" />
+  </ItemGroup>
+  <PropertyGroup>
+    <SelectedFpga>Core MAX10</SelectedFpga>
+    <IoVoltage>3.3V</IoVoltage>
+  </PropertyGroup>
+</Project>

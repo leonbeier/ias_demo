@@ -1,0 +1,267 @@
+Main
+(
+
+    Camera_CLK_Lane      : IN  STD_LOGIC;
+    Camera_Data_Lane     : IN  STD_LOGIC_VECTOR (3 downto 0);
+    Camera_Cam_Reset     : OUT STD_LOGIC;
+    Camera_Enable        : OUT STD_LOGIC;
+    Camera_SCL           : INOUT STD_LOGIC;
+    Camera_SDA           : INOUT STD_LOGIC;
+
+    HDMI_DATA            : OUT    STD_LOGIC_VECTOR(2 downto 0);
+    HDMI_CLK             : OUT    STD_LOGIC;
+    HDMI_HPD             : IN     STD_LOGIC;
+
+    Capture_sdram_addr   : OUT    STD_LOGIC_VECTOR (11 downto 0);
+    Capture_sdram_ba     : OUT    STD_LOGIC_VECTOR (1 downto 0);
+    Capture_sdram_cas_n  : OUT    STD_LOGIC;
+    Capture_sdram_dq     : INOUT  STD_LOGIC_VECTOR (15 downto 0) := (others => '0');
+    Capture_sdram_dqm    : OUT    STD_LOGIC_VECTOR (1 downto 0);
+    Capture_sdram_ras_n  : OUT    STD_LOGIC;
+    Capture_sdram_we_n   : OUT    STD_LOGIC;
+    Capture_sdram_clk    : OUT    STD_LOGIC;
+
+    Button               : IN     STD_LOGIC;
+)
+{
+
+
+--GENERATED SIGNALS---------------------------------------------------------------------------------------------
+
+    --OnSemi Camera and HDMI----------------------------------------------------------------------------------------
+
+    --More Settings in Libraries/OnSemi_Image_Data.vhdp
+
+    --Clock Settings in SDRAM_HDMI/VS_SDRAM_PLL
+    CONSTANT Pixel_Clock : NATURAL := 28000000;
+
+--GENERATED CODE------------------------------------------------------------------------------------------------
+
+    --OnSemi Camera and HDMI----------------------------------------------------------------------------------------
+
+    --Output_Stream <= Camera_Stream;
+    
+    Color_Correction_Filter_iStream <= Camera_Stream;
+    RGB2HSV_Filter_iStream <= Color_Correction_Filter_oStream;
+    Color_Threshold_HSV_Filter_iStream <= RGB2HSV_Filter_oStream;
+    Gaussian_Filter_iStream <= Color_Threshold_HSV_Filter_oStream;
+    Draw_Squares_iStream <= Color_Correction_Filter_oStream when Enable_Filter = '1' else Gaussian_Filter_oStream;
+    Output_Stream <= Draw_Squares_oStream;
+    
+    
+    SIGNAL Enable_Filter : STD_LOGIC;
+    NewComponent Input_Debouncer
+    (
+        Inputs(0)    => Button,
+        Outputs(0)   => Enable_Filter,
+    );
+    
+
+--GENERATED COMPONENTS------------------------------------------------------------------------------------------
+
+    --OnSemi Camera and HDMI----------------------------------------------------------------------------------------
+
+--Camera Interface-------------------------------------------------------------------
+
+    Camera_Enable <= '1';
+
+    --Receive CSI Data
+    SIGNAL Camera_Stream         : rgb_stream;
+    NewComponent AR0430_Camera
+    (
+        CLK_Frequency   => Pixel_Clock,
+        CLK_as_PCLK     => true,
+        Auto_Brightness => true,
+
+        CLK           => VS_PCLK,
+
+        Reset         => '0',
+        CLK_Lane      => Camera_CLK_Lane,
+        Data_Lane     => Camera_Data_Lane,
+        Cam_Reset     => Camera_Cam_Reset,
+        SCL           => Camera_SCL,
+        SDA           => Camera_SDA,
+
+        oStream       => Camera_Stream,
+    );
+    
+    --Apply Filters-------------------------------------------------------------
+
+    SIGNAL Color_Correction_Filter_iStream      : rgb_stream;
+    SIGNAL Color_Correction_Filter_oStream      : rgb_stream;
+    NewComponent Color_Correction_Filter
+    (
+        CLK_Edge     => true,
+
+        R_Multiplier => 1,
+        R_Divider    => 1,
+        R_Add        => 0,
+        G_Multiplier => 2,
+        G_Divider    => 3,
+        G_Add        => 0,
+        B_Multiplier => 1,
+        B_Divider    => 1,
+        B_Add        => 0,
+        iStream      => Color_Correction_Filter_iStream,
+        oStream      => Color_Correction_Filter_oStream,
+    );
+    
+    SIGNAL RGB2HSV_Filter_iStream : rgb_stream;
+    SIGNAL RGB2HSV_Filter_oStream : rgb_stream;
+    NewComponent RGB2HSV_Filter
+    (
+        iStream  => RGB2HSV_Filter_iStream,
+        oStream  => RGB2HSV_Filter_oStream,
+    );
+    
+    SIGNAL Color_Threshold_HSV_Filter_iStream : rgb_stream;
+    SIGNAL Color_Threshold_HSV_Filter_oStream : rgb_stream;
+    NewComponent Color_Threshold_HSV_Filter
+    (
+        H_Min    => 90,
+        H_Max    => 130,
+        S_Min    => 60,
+        S_Max    => 255,
+        V_Min    => 40,
+        V_Max    => 255,
+        iStream  => Color_Threshold_HSV_Filter_iStream,
+        oStream  => Color_Threshold_HSV_Filter_oStream,
+    );
+    
+    SIGNAL Gaussian_Filter_iStream : rgb_stream;
+    SIGNAL Gaussian_Filter_oStream : rgb_stream;
+    NewComponent Gaussian_Filter
+    (
+        Filter_Area => 3,
+        Color_Depth => 1,
+        Gaussian    => false,
+        HSV_Mode    => true,
+
+        iStream     => Gaussian_Filter_iStream,
+        oStream     => Gaussian_Filter_oStream,
+    );
+    
+    SIGNAL Blob_Detect_Blobs : NATURAL range 0 to 32;
+    SIGNAL Blob_Detect_Blob_Addr : NATURAL range 0 to 32 - 1;
+    SIGNAL Blob_Detect_Blob_X0 : NATURAL range 0 to Image_Width - 1;
+    SIGNAL Blob_Detect_Blob_X1 : NATURAL range 0 to Image_Width - 1;
+    SIGNAL Blob_Detect_Blob_Y0 : NATURAL range 0 to Image_Height - 1;
+    SIGNAL Blob_Detect_Blob_Y1 : NATURAL range 0 to Image_Height - 1;
+    NewComponent Blob_Detect
+    (
+        Blob_Number     => 32,
+        Blob_Buffer     => 8,
+        Edge_Reg_Size   => 3,
+        Min_Blob_Width  => 20,
+        Min_Blob_Height => 20,
+        Max_Blob_Width  => Image_Width,
+        Max_Blob_Height => Image_Height,
+
+        New_Pixel       => Gaussian_Filter_oStream.New_Pixel,
+        Pixel_In        => Gaussian_Filter_oStream.R(7),
+        Column          => Gaussian_Filter_oStream.Column,
+        Row             => Gaussian_Filter_oStream.Row,
+        Blobs           => Blob_Detect_Blobs,
+        Blob_Addr       => Blob_Detect_Blob_Addr,
+        Blob_X0         => Blob_Detect_Blob_X0,
+        Blob_X1         => Blob_Detect_Blob_X1,
+        Blob_Y0         => Blob_Detect_Blob_Y0,
+        Blob_Y1         => Blob_Detect_Blob_Y1,
+    );
+    
+    SIGNAL Draw_Squares_oStream : rgb_stream;
+    SIGNAL Draw_Squares_iStream : rgb_stream;
+    NewComponent Draw_Squares
+    (
+        Max_Square_Number => 32,
+        Width             => 4,
+        Color             => x"FF0000",
+
+        Squares           => Blob_Detect_Blobs,
+        Square_Addr       => Blob_Detect_Blob_Addr,
+        Square_X0         => Blob_Detect_Blob_X0,
+        Square_X1         => Blob_Detect_Blob_X1,
+        Square_Y0         => Blob_Detect_Blob_Y0,
+        Square_Y1         => Blob_Detect_Blob_Y1,
+        iStream           => Draw_Squares_iStream,
+        oStream           => Draw_Squares_oStream,
+    );
+    
+    
+
+    --Output image with HDMI-------------------------------------------------------------
+
+    SIGNAL Output_Stream : rgb_stream;
+
+    --First saves image and then outputs it with correct timing
+    SIGNAL Capture_CLK_140     : STD_LOGIC;
+    SIGNAL Capture_Read_Column : NATURAL          range 0 to Image_Width-1 := 0;
+    SIGNAL Capture_Read_Row    : NATURAL          range 0 to Image_Height-1 := 0;
+    SIGNAL Capture_Read_Data   : STD_LOGIC_VECTOR (23 downto 0) := (others => '0');
+    NewComponent Camera_Capture_SDRAM
+    (
+        CLK_Edge    => true,
+
+        iStream     => Output_Stream,
+
+        CLK_140     => Capture_CLK_140,
+        Read_Column => Capture_Read_Column,
+        Read_Row    => Capture_Read_Row,
+        Read_Data   => Capture_Read_Data,
+
+        sdram_addr  => Capture_sdram_addr,
+        sdram_ba    => Capture_sdram_ba,
+        sdram_cas_n => Capture_sdram_cas_n,
+        sdram_dq    => Capture_sdram_dq,
+        sdram_dqm   => Capture_sdram_dqm,
+        sdram_ras_n => Capture_sdram_ras_n,
+        sdram_we_n  => Capture_sdram_we_n,
+    );
+
+    NewComponent VS_SDRAM_Interface
+    (
+        pixel_shift    => 5,
+        black_row      => 2,
+        
+        Read_Column    => Capture_Read_Column,
+        Read_Row       => Capture_Read_Row,
+        Read_Data      => Capture_Read_Data,
+
+        CLK_140        => Capture_CLK_140,
+        SDRAM_CLK      => Capture_sdram_clk,
+
+        VS_PCLK        => VS_PCLK,
+        VS_SCLK        => VS_SCLK,
+        VS_R           => VS_R,
+        VS_G           => VS_G,
+        VS_B           => VS_B,
+        VS_HS          => VS_HS,
+        VS_VS          => VS_VS,
+        VS_DE          => VS_DE,
+    );
+    
+    --Output video stream with hdmi interface
+    SIGNAL VS_PCLK   : STD_LOGIC;
+    SIGNAL VS_SCLK   : STD_LOGIC;
+    SIGNAL VS_R      : STD_LOGIC_VECTOR (7 downto 0);
+    SIGNAL VS_G      : STD_LOGIC_VECTOR (7 downto 0);
+    SIGNAL VS_B      : STD_LOGIC_VECTOR (7 downto 0);
+    SIGNAL VS_HS     : STD_LOGIC;
+    SIGNAL VS_VS     : STD_LOGIC;
+    SIGNAL VS_DE     : STD_LOGIC;
+    NewComponent HDMI_Out
+    (
+        VS_PCLK    => VS_PCLK,
+        VS_SCLK    => VS_SCLK,
+        VS_R       => VS_R,
+        VS_G       => VS_G,
+        VS_B       => VS_B,
+        VS_HS      => VS_HS,
+        VS_VS      => VS_VS,
+        VS_DE      => VS_DE,
+
+        HDMI_DATA  => HDMI_DATA,
+        HDMI_CLK   => HDMI_CLK,
+        HDMI_HPD   => HDMI_HPD,
+    );
+}
