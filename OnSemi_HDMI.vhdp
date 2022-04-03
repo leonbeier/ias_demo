@@ -45,7 +45,7 @@ Main
     RGB2HSV_Filter_iStream <= Color_Correction_Filter_oStream;
     Color_Threshold_HSV_Filter_iStream <= RGB2HSV_Filter_oStream;
     Gaussian_Filter_iStream <= Color_Threshold_HSV_Filter_oStream;
-    Draw_Squares_iStream <= Color_Correction_Filter_oStream when Enable_Filter = '1' else Gaussian_Filter_oStream;
+    Draw_Squares_iStream <= Color_Correction_Filter_oStream when Enable_Filter = '0' else Gaussian_Filter_oStream;
     Output_Stream <= Draw_Squares_oStream;
     
     
